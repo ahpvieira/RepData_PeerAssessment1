@@ -1,25 +1,122 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+Reproducible Research First Assignment
+======================================
 
 
-## Loading and preprocessing the data
+### Loading the data
+
+```{r}
+data <- read.csv("activity.csv", header = T, 
+                 sep = ",", dec = ".", quote = "\"")
+```
+
+### What is mean total number of steps taken per day?
+
+Calculates the total number of steps taken per day:
+
+```{r, results = "hide"}
+stepsByday <- aggregate(data$steps, list(data$date), sum)
+print(stepsByday)
+```
+
+Makes a histogram of the total number of steps taken each day:
+
+```{r}
+hist(stepsByday$x, main = "Total number of steps")
+```
+
+Calculates the mean and median of the total number of steps taken per day:
+
+```{r}
+summary(stepsByday$x, na.rm = T)
+```
+
+### What is the average daily activity pattern?
+
+Calculates the average number of steps taken per 5-minute interval:
+
+```{r, results = "hide"}
+stepsBy5Minutes <- aggregate(steps ~ interval, data = data, mean)
+print(stepsBy5Minutes)
+```
+
+Makes a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis):
+
+```{r}
+plot(stepsBy5Minutes, type = "l")
+```
+
+Identifies the 5-minute interval which contains the maximum number of steps:
+
+```{r}
+stepsBy5Minutes[stepsBy5Minutes$steps == max(stepsBy5Minutes$steps), 1]
+```
+
+#### Imputing missing values
+
+Calculates the total number of missing values in the dataset:
+
+```{r}
+nrow(data[!complete.cases(data), ])
+```
+
+Creates a new dataset that is equal to the original dataset but with the missing data filled in with the average number of steps for each 5-minute interval:
+
+```{r}
+newData <- data
+newData$steps[is.na(newData$steps)] <- rep(stepsBy5Minutes$steps, 8)
+```
+
+Makes a histogram of the total number of steps taken each day:
+
+```{r}
+StepsByDay2 <- aggregate(newData$steps, list(newData$date), sum)
+hist(StepsByDay2$x, main = "Total number of steps (imputed missing data)")
+```
+
+Calculates the mean and median total number of steps taken per day:
+
+```{r}
+summary(StepsByDay2$x, na.rm = T)
+```
+
+The number of steps taken each day hardly differs from the estimates from the first part of this assignment. Almost no impact is found after the the use of the average number of steps for each 5-minute interval as strategy for imputing missing values.
+
+### Are there differences in activity patterns between weekdays and weekends?
+
+Creates a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day:
+
+```{r}
+newData2 <- newData
+newData2$date <- as.Date(newData$date)
+newData2$day <- as.factor(weekdays(newData2$date))
+levels(newData2$day) <- list(Weekday = "segunda-feira",
+                  Weekday = "terça-feira",
+                  Weekday = "quarta-feira",
+                  Weekday = "quinta-feira",
+                  Weekday = "sexta-feira",
+                  Weekend = "sábado",
+                  Weekend = "domingo")
+```
+
+Processes the data and makes a panel plot containing a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis):
+
+```{r}
+weekday <- newData2[newData2$day == "Weekday", c("interval", "steps")]
+weekend <- newData2[newData2$day == "Weekend", c("interval", "steps")]
+stepsByWeekday <- aggregate(steps ~ interval, data = weekday, mean)
+stepsByWeekend <- aggregate(steps ~ interval, data = weekend, mean)
+
+par(mfrow = c(2, 1), mar = c(4, 4, 1, 1))
+plot(stepsByWeekday, type = "l", main = "Weekday",
+     ylab = "Number of steps", xlab = "", xaxt = "n", ylim = c(0, 250))
+plot(stepsByWeekend, type = "l", main = "Weekend",
+     ylab = "Number of steps", xlab = "interval", ylim = c(0, 250))
+```
 
 
 
-## What is mean total number of steps taken per day?
 
 
 
-## What is the average daily activity pattern?
 
 
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
